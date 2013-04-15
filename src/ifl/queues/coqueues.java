@@ -21,6 +21,7 @@ import java.io.BufferedReader;
 import java.io.IOException; 
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList; 
@@ -42,6 +43,9 @@ import pk.aamir.stompj.internal.*;
 
 public class coqueues extends Activity 
 { 
+  /*创建一个handler类的实例*/
+  //Handler h = null;
+  
   /*声明一个Button对象,与一个TextView对象*/
   private Button mButton1;
   private Button mButton2;
@@ -53,12 +57,13 @@ public class coqueues extends Activity
   { 
     super.onCreate(savedInstanceState); 
     setContentView(R.layout.main); 
-     
+
     /*透过findViewById建构子建立TextView与Button对象*/ 
     mButton1 =(Button) findViewById(R.id.myButton1);
     mButton2 =(Button) findViewById(R.id.myButton2);
-    mTextView1 = (TextView) findViewById(R.id.myTextView1); 
-    
+    mTextView1 = (TextView) findViewById(R.id.myTextView1);
+    //final TextView mTextView1 = (TextView)findViewById(R.id.myTextView1);
+
     /*设定OnClickListener来聆听OnClick事件*/ 
     mButton2.setOnClickListener(new Button.OnClickListener() 
     { 
@@ -70,7 +75,9 @@ public class coqueues extends Activity
         
         // TODO Auto-generated method stub 
         /*声明网址字符串*/
-        String uriAPI = "http://rhomobi.com/api/nodes.json"; 
+        //String uriAPI = "http://rhomobi.com/api/nodes.json"; 
+        String uriAPI = "http://10.124.20.136/faredemo.json"; 
+        
         /*建立HTTP Get联机*/
         HttpGet httpRequest = new HttpGet(uriAPI); 
         try 
@@ -84,8 +91,7 @@ public class coqueues extends Activity
               String strResult = EntityUtils.toString(httpResponse.getEntity());
               /*删除多余字符*/
               strResult = eregi_replace("(\r\n|\r|\n|\n\r)","",strResult);
-               
-              
+
               try
               {
                 con.connect();
@@ -96,20 +102,17 @@ public class coqueues extends Activity
                 System.out.println("++++++++++++++++++\n"+strResult);
                 msg.setContent(strResult);
                 con.send(msg, "/queue/ifl_ticket");
-  
+                
+                mTextView1.setText("Receive Fare from MQ OK!");
+                
                 con.disconnect();
-                
-                mTextView1.setText(strResult);
-                
-                 
-                
+
               } catch (StompJException e)
               {
                 // TODO Auto-generated catch block
-                mTextView1.setText(e.getMessage().toString());
+                //mTextView1.setText(e.getMessage().toString());
                 e.printStackTrace();
               }
-              
 
             } 
             else 
@@ -142,32 +145,50 @@ public class coqueues extends Activity
     public void onClick(View v) { 
         // TODO Auto-generated method stub 
         /*声明网址字符串*/
-        Connection con = new Connection("10.124.20.135", 61613, "admin", "admin");
+        Connection con = new Connection("10.128.34.75", 61615);
         try
         {
           con.connect();
 
-          con.subscribe("/queue/ifl_ticket", true);
-          con.addMessageHandler("/queue/ifl_ticket", new MessageHandler() {
+          con.subscribe("/queue/ifl_test", true);
+          con.addMessageHandler("/queue/ifl_test", new MessageHandler() {
             public void onMessage(Message msg) {
               //System.out.println(msg.getContentAsString());
               String strResult = msg.getContentAsString();
               strResult = eregi_replace("(\r\n|\r|\n|\n\r)","",strResult);
+              try
+              {
+                strResult = new String(strResult.getBytes("ISO-8859-1"), "UTF-8");
+              } catch (UnsupportedEncodingException e1)
+              {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+              }
+              
               //mTextView1.setText(strResult);              
               
               /*声明网址字符串*/
               String uriAPI = "http://10.124.20.136/data-base";
               try
               {
+                
                 String res = postfareasraw(uriAPI,strResult);
                 //String res = simplepostfare(uriAPI,strResult);
                 System.out.println("++++++++++++++++++:\n"+res);
                 
-                //mTextView1.setText(res);
+                
+                /*
+                h = new Handler(){  
+                  public void handleMessage(Message strResult){  
+                      // call update gui method. 
+                      mTextView1.setText((CharSequence) strResult);
+                  }  
+              };*/
+              
               } catch (Exception e)
               {
                 // TODO Auto-generated catch block
-                mTextView1.setText(e.getMessage().toString());
+                //mTextView1.setText(e.getMessage().toString());
                 e.printStackTrace();
               }             
              
@@ -179,7 +200,7 @@ public class coqueues extends Activity
         } catch (StompJException e)
         {
           // TODO Auto-generated catch block
-          mTextView1.setText(e.getMessage().toString());
+          //mTextView1.setText(e.getMessage().toString());
           e.printStackTrace();
         }
       }
@@ -260,12 +281,12 @@ public class coqueues extends Activity
        } 
        catch (ClientProtocolException e) 
        {  
-         mTextView1.setText(e.getMessage().toString()); 
+         //mTextView1.setText(e.getMessage().toString()); 
          e.printStackTrace(); 
        } 
        catch (IOException e) 
        {  
-         mTextView1.setText(e.getMessage().toString()); 
+         //mTextView1.setText(e.getMessage().toString()); 
          e.printStackTrace(); 
        } 
        return "";
