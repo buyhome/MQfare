@@ -40,6 +40,9 @@ import android.widget.TextView;
 import pk.aamir.stompj.*;
 import pk.aamir.stompj.internal.*;
 
+/*Luajava*/
+import org.keplerproject.luajava.*;
+
 
 public class coqueues extends Activity 
 { 
@@ -53,7 +56,7 @@ public class coqueues extends Activity
    
   /** Called when the activity is first created. */ 
   @Override 
-  public void onCreate(Bundle savedInstanceState) 
+  public void onCreate(final Bundle savedInstanceState) 
   { 
     super.onCreate(savedInstanceState); 
     setContentView(R.layout.main); 
@@ -62,6 +65,13 @@ public class coqueues extends Activity
     mButton1 =(Button) findViewById(R.id.myButton1);
     mButton2 =(Button) findViewById(R.id.myButton2);
     mTextView1 = (TextView) findViewById(R.id.myTextView1);
+    final String strlua = "a = 'campo a';" + 
+    "b = 'campo b';" +
+    "c = 'campo c';" +
+    "tab= { a='tab a'; b='tab b'; c='tab c', d={ e='tab d e'} } ;"+
+    "function imprime (str) print(str); return 'joao', 1  end;" + 
+    "luaPrint={implements='org.keplerproject.luajava.test.Printable', print=function(str)print('Printing from lua :'..str)end  }";
+    
     //final TextView mTextView1 = (TextView)findViewById(R.id.myTextView1);
 
     /*设定OnClickListener来聆听OnClick事件*/ 
@@ -70,71 +80,20 @@ public class coqueues extends Activity
       @Override 
       public void onClick(View v) 
       { 
-        /*MQ*/
-        Connection con = new Connection("10.124.20.135", 61613, "admin", "admin");
         
-        // TODO Auto-generated method stub 
-        /*声明网址字符串*/
-        //String uriAPI = "http://rhomobi.com/api/nodes.json"; 
-        String uriAPI = "http://10.124.20.136/faredemo.json"; 
+        LuaState L = LuaStateFactory.newLuaState();
+        L.openBase();
         
-        /*建立HTTP Get联机*/
-        HttpGet httpRequest = new HttpGet(uriAPI); 
-        try 
-          { 
-            /*发出HTTP request*/
-            HttpResponse httpResponse = new DefaultHttpClient().execute(httpRequest); 
-            /*若状态码为200 ok*/
-            if(httpResponse.getStatusLine().getStatusCode() == 200)  
-            { 
-              /*取出响应字符串*/
-              String strResult = EntityUtils.toString(httpResponse.getEntity());
-              /*删除多余字符*/
-              strResult = eregi_replace("(\r\n|\r|\n|\n\r)","",strResult);
+        L.LdoString(strlua);
 
-              try
-              {
-                con.connect();
-                DefaultMessage msg = new DefaultMessage();
-
-                //msg.setProperty("type", "text/plain");
-                msg.setProperty("type", "application/json");
-                System.out.println("++++++++++++++++++\n"+strResult);
-                msg.setContent(strResult);
-                con.send(msg, "/queue/ifl_ticket");
-                
-                mTextView1.setText("Receive Fare from MQ OK!");
-                
-                con.disconnect();
-
-              } catch (StompJException e)
-              {
-                // TODO Auto-generated catch block
-                //mTextView1.setText(e.getMessage().toString());
-                e.printStackTrace();
-              }
-
-            } 
-            else 
-            { 
-              mTextView1.setText("Error Response: "+httpResponse.getStatusLine().toString()); 
-            } 
-          } 
-          catch (ClientProtocolException e) 
-          {  
-            mTextView1.setText(e.getMessage().toString()); 
-            e.printStackTrace(); 
-          } 
-          catch (IOException e) 
-          {  
-            mTextView1.setText(e.getMessage().toString()); 
-            e.printStackTrace(); 
-          } 
-          catch (Exception e) 
-          {  
-            mTextView1.setText(e.getMessage().toString()); 
-            e.printStackTrace();  
-          }  
+        L.close();
+        /*
+        L.openLibs();
+        L.LdoString("text = 'Hello Android, I am Lua.'");
+        L.getGlobal("text");
+        String text = L.toString(-1);
+        */
+        mTextView1.setText(strlua);
 
       }
     }); 
